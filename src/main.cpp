@@ -6,52 +6,16 @@
 #include <FS.h>
 #include <WebSocketsServer.h>
 #include "ArduinoJson.h"
-
-void rainbowWave(uint8_t, uint8_t);
-void executeEveryLoop(void);
-void startWiFi();      // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
-void startOTA();       // Start the OTA service
-void startSPIFFS();    // Start the SPIFFS and list all contents
-void startWebSocket(); // Start a WebSocket server
-void startMDNS();      // Start the mDNS responder
-void startServer();    // Start a HTTP server with a file read handler and an upload handler
-void doBlinkStep();
-String formatBytes(size_t bytes);
-void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght);
-bool handleFileRead(String path);
-void handleNotFound();
-String getContentType(String filename);
-void checkOperationMode(void);
-void sendStatus();
+#include "main.h"
 
 // ************ Function definitions ************
-void rainbowWave(uint8_t, uint8_t);
-void executeEveryLoop(void);
 void sendStatus();
 
-void checkOperationMode(void);
-
 // ************ Global vars ************
-bool rainbow = false; // The rainbow effect is turned off on startup
 unsigned long start, end = 0;
 unsigned long prevMillis = millis();
-int hue = 0;
+const int powerButtonPin = D4;
 
-// solid color from json message
-uint32_t solidColor = 0xFF0000; // default: red
-
-enum OPERATING_MODE
-{
-  ADALIGHT,
-  SOLID_COLOR,
-  RAINBOW,
-  DIFFERENT_EFFECTS,
-  BLINK
-
-} currentOperatingMode;
-
-#define NUM_LEDS 59
-#define DATA_PIN 14 // D5 on board
 #define JSON_MAXLENGTH 200
 
 ESP8266WiFiMulti wifiMulti; // Create an instance of the ESP8266WiFiMulti class, called 'wifiMulti'
@@ -73,6 +37,9 @@ const char *mdnsName = "esp8266"; // Domain name for the mDNS responder
 
 void setup()
 {
+  // prepare power button pin
+  pinMode(powerButtonPin, OUTPUT);
+  digitalWrite(powerButtonPin, HIGH); // HIGH - counts as not pressing the button
 
   Serial.begin(115200); // Start the Serial communication to send messages to the computer
   delay(10);
@@ -237,7 +204,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
   { // if a new websocket connection is established
     IPAddress ip = webSocket.remoteIP(num);
     Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-    rainbow = false; // Turn rainbow off when a new connection is established
   }
   break;
   case WStype_TEXT: // if new text data is received
@@ -260,25 +226,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
     // Most of the time, you can rely on the implicit casts.
     // In other case, you can do doc["time"].as<long>();
 
-    if (jsonDoc["type"] == "SOLID_COLOR")
-    { // SOLID_COLOR
-      currentOperatingMode = SOLID_COLOR;
-      solidColor = jsonDoc["color"];
-      checkOperationMode();
-    }
-    else if (jsonDoc["type"] == "RAINBOW")
-    { // RAINBOW
-      currentOperatingMode = RAINBOW;
-      checkOperationMode();
-    }
-    else if (jsonDoc["type"] == "BLINK")
-    { // Other operating modes go here
-      currentOperatingMode = BLINK;
-      checkOperationMode();
-    }
-    else if (jsonDoc["type"] == "STATUS_UPDATE_NEEDED")
-    { // Client needs status update
-      sendStatus();
+    if (jsonDoc["type"] == "POWER_BUTTON")
+    {
+      // Pin LOW == you pressed power button
+      digitalWrite(powerButtonPin, LOW);
+      Serial.println("powerButtonPin=LOW");
+      delay(50);
+      digitalWrite(powerButtonPin, HIGH);
+      Serial.println("powerButtonPin=HIGH");
     }
 
     break;
@@ -320,16 +275,16 @@ String getContentType(String filename)
 void sendStatus()
 {
   // send current status to websocket client here (mode, settings for that mode)
-  jsonDoc["type"] = "STATUS_UPDATE";
-  jsonDoc["OPERATING_MODE"] = currentOperatingMode;
+  // jsonDoc["type"] = "STATUS_UPDATE";
+  // jsonDoc["OPERATING_MODE"] = currentOperatingMode;
 
-  if (currentOperatingMode == SOLID_COLOR)
-  { // attach info about choosen setting if needed
-    jsonDoc["solidColor"] = solidColor;
-  }
+  // if (currentOperatingMode == SOLID_COLOR)
+  // { // attach info about choosen setting if needed
+  // jsonDoc["solidColor"] = solidColor;
+  // }
 
-  String statusString;
-  serializeJson(jsonDoc, statusString);
+  // String statusString;
+  // serializeJson(jsonDoc, statusString);
 
   // JsonArray data = doc.createNestedArray("data");
   // data.add(48.756080);
@@ -337,35 +292,5 @@ void sendStatus()
 
   // It's sent to every client connected, not the one who requested it
   // no harm in that tho
-  webSocket.broadcastTXT(statusString);
-}
-
-void checkOperationMode(void)
-{
-
-  if (currentOperatingMode == SOLID_COLOR)
-  { // set whole strip to one color
-    // set color here, solidColor global var contains color info
-  }
-  else if (currentOperatingMode == RAINBOW)
-  {
-    // Serial.print("RAINBOW!\n");
-    // rainbow function has to be executed in loop: rainbowWave(200, 10)
-    // should write effect functions that don't require that
-  }
-  else if (currentOperatingMode == BLINK)
-  {
-  }
-}
-
-void executeEveryLoop()
-{
-
-  // rainbow
-  if (currentOperatingMode == RAINBOW)
-  {
-  }
-  else if (currentOperatingMode == BLINK)
-  {
-  }
+  // webSocket.broadcastTXT(statusString);
 }

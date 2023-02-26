@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Zarzadzanie tasma LED</title>
     <link href='main.css' rel='stylesheet' type='text/css'>
-    <link rel="icon" type="image/png" sizes="144x144"  href="/favicon-144x144.png">
+    <link rel="icon" type="image/png" sizes="144x144" href="/favicon-144x144.png">
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon.ico">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#00878f">
@@ -16,49 +17,30 @@
         <header>
             <h1 id='connectionStatus'>Status: <b style='color: gray'>LACZENIE</b></h1> <!-- ver 2 -->
         </header>
+        <style>
+          .button {
+            height:500px;
+            width:500px;
+          }  
+        </style>
         <div id="settings">
-                <table>
-                    <tr>
-                    <td>            
+            <table>
+                <tr>
+                    <td>
                         <header id="modeHeader">
-                            <h1>Wybierz tryb</h1>
+                            <h1><button id='power'>ON/OFF</button></h1>
                         </header>
                     </td>
-                    </tr>
-                    <tr>
-                        <td>
-                        <select name="mode" id="mode">
-                            <option value="SOLID_COLOR">Jednolity kolor</option>
-                            <option value="ADALIGHT">Adalight (odczyt przez serial)</option>
-                            <option value="RAINBOW">Tecza</option>
-                            <option value="BLINK">Blink</option>
-                            <option value="effects">Wiecej...</option>
-                        </select>
-                        </td>
-                    </tr>
-                    <tr id="settingsAdalight" class="operatingModeSettings">
-                        <td>TUTAJ USTAWIENNIA PRZY settingsAdalight</td>
-                    </tr>
-                    <tr id="settingsSolidColor" class="operatingModeSettings">
-                        <td>Kolor: <input type="color" id="solidColor"></td>
-                    </tr>
-                    <tr id="settingsEffects" class="operatingModeSettings">
-                        <td>
-                            <p style="margin:8px 0px"><button id="rainbow" class="button" style="background-color:#999" onclick="sendRainbowEffect();">Rainbow</button></p>
-                        </td>
-                    </tr>
-
-                </table>
+                </tr>
+            </table>
         </div>
     </center>
 </body>
 <script>
-    // ADD EVENT LISTENERS
 
-    // mode dropdown change
-    document.getElementById('mode').addEventListener("input", switchModeDropdownHandler);
-    
-    // Solid color change
-    document.getElementById('solidColor').addEventListener("input", sendSolidColor);
+    // power button press
+    document.getElementById('power').addEventListener("click", powerButtonHandler);
+
 </script>
+
 </html>

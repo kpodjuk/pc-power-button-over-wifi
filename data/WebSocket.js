@@ -2,9 +2,6 @@ var connectionCheckInterval = window.setInterval(function () {
     checkConnection();
 }, 2000);
 
-
-
-var rainbowEnable = false;
 var connection = new WebSocket('ws://' + location.hostname + ':81/', ['arduino']);
 
 connection.onopen = function () {
@@ -26,52 +23,46 @@ connection.onclose = function () {
 function sendJSON(message) {
     // input : message object
     messageString = JSON.stringify(message);
+    console.log("sendJSON():");
+    console.log(messageString);
     connection.send(messageString);
 }
 
 function processWebsocketMessage(message) {
-    m = JSON.parse(message);
-
-    if (m["type"] == "STATUS_UPDATE") { // status update received
-        processStatusReport(m);
-    }
+    // example:
+    
+    // m = JSON.parse(message);
+    // if (m["type"] == "STATUS_UPDATE") { // status update received
+    //     processStatusReport(m);
+    // }
 
 }
 
 
-
-function requestStatusReport() { // requested by client at every connection
-    // C code should also send update everytime something important is changed
-    var message = {
-        type: "STATUS_UPDATE_NEEDED"
-    }
-    sendJSON(message);
-}
-
-function processStatusReport(m) { // process status sent from arduino and setup UI to reflect it
-    // m - object with info
-    switch (m["OPERATING_MODE"]) {  // Operating mode as a number, for info check enum in C code
-        case 0:
-            switchMode("ADALIGHT");
-            break;
-        case 1:
-            switchMode("SOLID_COLOR");
-            // process color from C format (normal number -> #FFFFFF style string)
-            var colorString = m["solidColor"].toString(16); 
-            colorString = colorString.padStart(6, 0);
-            colorString = "#" + colorString;
-            // console.log("Processed color: "+ colorString);
-            document.getElementById('solidColor').value = colorString;
-            break;
-        case 2:
-            // RAINBOW
-            switchMode("RAINBOW");
-            break;
-        case 4: //BLINK
-            switchMode("BLINK");
-            break;
-    }
-}
+// function processStatusReport(m) { // process status sent from arduino and setup UI to reflect it
+//     // m - object with info
+//     switch (m["OPERATING_MODE"]) {  // Operating mode as a number, for info check enum in C code
+//         case 0:
+//             switchMode("ADALIGHT");
+//             break;
+//         case 1:
+//             switchMode("SOLID_COLOR");
+//             // process color from C format (normal number -> #FFFFFF style string)
+//             var colorString = m["solidColor"].toString(16); 
+//             colorString = colorString.padStart(6, 0);
+//             colorString = "#" + colorString;
+//             // console.log("Processed color: "+ colorString);
+//             document.getElementById('solidColor').value = colorString;
+//             break;
+//         case 2:
+//             // RAINBOW
+//             switchMode("RAINBOW");
+//             break;
+//         case 4: //BLINK
+//             switchMode("BLINK");
+//             break;
+//     }
+// }
 
 
 
@@ -103,79 +94,54 @@ function checkConnection() {
 }
 
 
-function sendSolidColor() {
-    var color = document.getElementById('solidColor').value;
-
-    color = color.slice(1, 7); //get rid of '#' at beggining
-    var colorNumber = parseInt(color, 16);
-
+function powerButtonHandler() {
     var message =
     {
-        type: "SOLID_COLOR",
-        color: colorNumber
+        type: "POWER_BUTTON"
     }
-    sendJSON(message);
-
-}
-
-function sendRainbowEffect() {
-    rainbowEnable = !rainbowEnable;
-
-    var message =
-    {
-        type: "RAINBOW",
-        value: "rainbow"
-    }
-
     sendJSON(message);
 }
 
+// function switchMode(mode) {
+//     document.getElementById('mode').value = mode; // update dropdown to reflect actual state
+//     switch (mode) {
+//         case "ADALIGHT":
+//             document.getElementById("settingsAdalight").style.display = "block";
+//             document.getElementById("settingsSolidColor").style.display = "none";
+//             document.getElementById("settingsEffects").style.display = "none";
+//             break;
+//         case "SOLID_COLOR":
+//             document.getElementById("settingsAdalight").style.display = "none";
+//             document.getElementById("settingsSolidColor").style.display = "block";
+//             document.getElementById("settingsEffects").style.display = "none";
+//             // document.getElementById('solidColor').value = "#000000"; //reset value when entering this mode
 
-function switchModeDropdownHandler() {
-    var value = document.getElementById("mode").value;
-    switchMode(value);
-}
+//             // var message = { // send black as default 
+//             //     type: "SOLID_COLOR",
+//             //     color: 0
+//             // }
+//             // sendJSON(message);
 
-function switchMode(mode) {
-    document.getElementById('mode').value = mode; // update dropdown to reflect actual state
-    switch (mode) {
-        case "ADALIGHT":
-            document.getElementById("settingsAdalight").style.display = "block";
-            document.getElementById("settingsSolidColor").style.display = "none";
-            document.getElementById("settingsEffects").style.display = "none";
-            break;
-        case "SOLID_COLOR":
-            document.getElementById("settingsAdalight").style.display = "none";
-            document.getElementById("settingsSolidColor").style.display = "block";
-            document.getElementById("settingsEffects").style.display = "none";
-            // document.getElementById('solidColor').value = "#000000"; //reset value when entering this mode
+//             break;
+//         case "RAINBOW": //rainbow has no settings
+//             document.getElementById("settingsAdalight").style.display = "none";
+//             document.getElementById("settingsSolidColor").style.display = "none";
+//             document.getElementById("settingsEffects").style.display = "none";
+//             var message = {
+//                 type: "RAINBOW"
+//             }
+//             sendJSON(message);
+//             break;
+//         case "BLINK":
+//             document.getElementById("settingsAdalight").style.display = "none";
+//             document.getElementById("settingsSolidColor").style.display = "none";
+//             document.getElementById("settingsEffects").style.display = "none";
+//             var message = {
+//                 type: "BLINK"
+//             }
+//             sendJSON(message);
+//             break;
+//     }
 
-            // var message = { // send black as default 
-            //     type: "SOLID_COLOR",
-            //     color: 0
-            // }
-            // sendJSON(message);
-
-            break;
-        case "RAINBOW": //rainbow has no settings
-            document.getElementById("settingsAdalight").style.display = "none";
-            document.getElementById("settingsSolidColor").style.display = "none";
-            document.getElementById("settingsEffects").style.display = "none";
-            var message = {
-                type: "RAINBOW"
-            }
-            sendJSON(message);
-            break;
-        case "BLINK":
-            document.getElementById("settingsAdalight").style.display = "none";
-            document.getElementById("settingsSolidColor").style.display = "none";
-            document.getElementById("settingsEffects").style.display = "none";
-            var message = {
-                type: "BLINK"
-            }
-            sendJSON(message);
-            break;
-    }
-
-}
+// }
 
