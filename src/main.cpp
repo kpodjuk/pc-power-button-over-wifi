@@ -8,12 +8,7 @@
 #include "ArduinoJson.h"
 #include "main.h"
 
-// ************ Function definitions ************
-void sendStatus();
-
 // ************ Global vars ************
-unsigned long start, end = 0;
-unsigned long prevMillis = millis();
 const int powerButtonPin = D4;
 
 #define JSON_MAXLENGTH 200
@@ -157,6 +152,26 @@ void startServer()
     server.send(200, "text/plain", "");
   });
 
+  server.on("/", HTTP_GET, []()
+            {
+              if (server.argName(0) == "p")
+              {
+                String desiredAction = server.arg(0);
+                if (desiredAction == "on")
+                {
+                  Serial.println("Turning on!");
+                }
+                else if (desiredAction == "off")
+                {
+                  Serial.println("Turning off!");
+                }
+                else if (desiredAction == "toggle")
+                {
+                  Serial.println("Toggling!");
+                }
+              }
+              server.send(200, "text/plain", ""); });
+
   server.onNotFound(handleNotFound); // if someone requests any other file or page, go to function 'handleNotFound'
                                      // and check if the file exists
 
@@ -272,19 +287,26 @@ String getContentType(String filename)
   return "text/plain";
 }
 
+bool readPowerLightStatus(void)
+{
+  Serial.println("readPowerLightStatus()");
+  // read powerlight to determine current PC status (on/off)
+  return true;
+}
+
 void sendStatus()
 {
   // send current status to websocket client here (mode, settings for that mode)
-  // jsonDoc["type"] = "STATUS_UPDATE";
-  // jsonDoc["OPERATING_MODE"] = currentOperatingMode;
+  jsonDoc["type"] = "STATUS_UPDATE";
+  jsonDoc["turned_on"] = readPowerLightStatus();
 
   // if (currentOperatingMode == SOLID_COLOR)
   // { // attach info about choosen setting if needed
   // jsonDoc["solidColor"] = solidColor;
   // }
 
-  // String statusString;
-  // serializeJson(jsonDoc, statusString);
+  String statusString;
+  serializeJson(jsonDoc, statusString);
 
   // JsonArray data = doc.createNestedArray("data");
   // data.add(48.756080);
@@ -292,5 +314,5 @@ void sendStatus()
 
   // It's sent to every client connected, not the one who requested it
   // no harm in that tho
-  // webSocket.broadcastTXT(statusString);
+  webSocket.broadcastTXT(statusString);
 }

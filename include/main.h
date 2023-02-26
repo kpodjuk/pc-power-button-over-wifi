@@ -1,5 +1,6 @@
 #include <string.h>
 
+// ************ Function definitions ************
 void startWiFi();      // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
 void startOTA();       // Start the OTA service
 void startSPIFFS();    // Start the SPIFFS and list all contents
@@ -9,5 +10,6 @@ void startServer();    // Start a HTTP server with a file read handler and an up
 String formatBytes(size_t bytes);
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght);
 bool handleFileRead(String path);
+void sendStatus();
 void handleNotFound();
 String getContentType(String filename);
