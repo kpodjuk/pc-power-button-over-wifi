@@ -8,32 +8,11 @@
 #include "ArduinoJson.h"
 #include "main.h"
 
-// ************ Global vars ************
-const int powerButtonPin = D4;
-
-#define JSON_MAXLENGTH 200
-
-ESP8266WiFiMulti wifiMulti; // Create an instance of the ESP8266WiFiMulti class, called 'wifiMulti'
-
-StaticJsonDocument<JSON_MAXLENGTH> jsonDoc; // JSON document received with websocket
-
-ESP8266WebServer server(80);    // Create a webserver object that listens for HTTP request on port 80
-WebSocketsServer webSocket(81); // create a websocket server on port 81
-
-File fsUploadFile; // a File variable to temporarily store the received file
-
-const char *ssid = "NodeMCU1"; // The name of the Wi-Fi network that will be created
-const char *password = "";     // The password required to connect to it, leave blank for an open network
-
-const char *OTAName = "ESP8266"; // A name and a password for the OTA service
-const char *OTAPassword = "esp8266";
-
-const char *mdnsName = "esp8266"; // Domain name for the mDNS responder
-
 void setup()
 {
-  // prepare power button pin
   pinMode(powerButtonPin, OUTPUT);
+  pinMode(poweredOnDetectionPin, INPUT);
+
   digitalWrite(powerButtonPin, HIGH); // HIGH - counts as not pressing the button
 
   Serial.begin(115200); // Start the Serial communication to send messages to the computer
@@ -58,6 +37,7 @@ void loop()
   webSocket.loop();      // constantly check for websocket events
   server.handleClient(); // run the server
   ArduinoOTA.handle();   // listen for OTA events
+  // checkButtonPin();
 }
 
 void startWiFi()
@@ -291,14 +271,14 @@ String getContentType(String filename)
   return "text/plain";
 }
 
-bool readPowerLightStatus(void)
+bool readPowerLightStatus()
 {
   Serial.println("readPowerLightStatus()");
   // read powerlight to determine current PC status (on/off)
   return true;
 }
 
-void sendStatus(void)
+void sendStatus()
 {
   // send current status to websocket client here (mode, settings for that mode)
   jsonDoc["type"] = "STATUS_UPDATE";
@@ -321,7 +301,7 @@ void sendStatus(void)
   webSocket.broadcastTXT(statusString);
 }
 
-void pressPowerButton(void)
+void pressPowerButton()
 {
   // Pin LOW == you pressed power button
   digitalWrite(powerButtonPin, LOW);
@@ -331,10 +311,31 @@ void pressPowerButton(void)
   Serial.println("powerButtonPin=HIGH");
 }
 
-void turnOff(void)
+void turnOff()
 {
+  if (digitalRead(poweredOnDetectionPin) == HIGH)
+  {
+    pressPowerButton();
+  }
 }
 
-void turnOn(void)
+void turnOn()
 {
+  if (digitalRead(poweredOnDetectionPin) == LOW)
+  {
+    pressPowerButton();
+  }
+}
+
+void checkButtonPin()
+{
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval)
+  {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+
+    Serial.printf("poweredOnDetectionPin=%i\r\n", digitalRead(poweredOnDetectionPin));
+  }
 }
