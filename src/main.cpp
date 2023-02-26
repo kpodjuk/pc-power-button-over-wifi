@@ -152,23 +152,32 @@ void startServer()
     server.send(200, "text/plain", "");
   });
 
-  server.on("/", HTTP_GET, []()
+  server.on("/api", HTTP_GET, []()
             {
               if (server.argName(0) == "p")
               {
                 String desiredAction = server.arg(0);
                 if (desiredAction == "on")
                 {
-                  Serial.println("Turning on!");
+                  Serial.println("/api: Turning on!");
+                  turnOn();
                 }
                 else if (desiredAction == "off")
                 {
-                  Serial.println("Turning off!");
+                  Serial.println("/api: Turning off!");
+                  turnOff();
                 }
                 else if (desiredAction == "toggle")
                 {
-                  Serial.println("Toggling!");
+                  Serial.println("/api: Toggling!");
+                  pressPowerButton();
+                } else {
+                  Serial.println("/api: Wrong value!");
+
                 }
+              } else {
+                  Serial.println("/api: Wrong param!");
+
               }
               server.send(200, "text/plain", ""); });
 
@@ -243,12 +252,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
 
     if (jsonDoc["type"] == "POWER_BUTTON")
     {
-      // Pin LOW == you pressed power button
-      digitalWrite(powerButtonPin, LOW);
-      Serial.println("powerButtonPin=LOW");
-      delay(50);
-      digitalWrite(powerButtonPin, HIGH);
-      Serial.println("powerButtonPin=HIGH");
+      pressPowerButton();
     }
 
     break;
@@ -294,7 +298,7 @@ bool readPowerLightStatus(void)
   return true;
 }
 
-void sendStatus()
+void sendStatus(void)
 {
   // send current status to websocket client here (mode, settings for that mode)
   jsonDoc["type"] = "STATUS_UPDATE";
@@ -315,4 +319,22 @@ void sendStatus()
   // It's sent to every client connected, not the one who requested it
   // no harm in that tho
   webSocket.broadcastTXT(statusString);
+}
+
+void pressPowerButton(void)
+{
+  // Pin LOW == you pressed power button
+  digitalWrite(powerButtonPin, LOW);
+  Serial.println("powerButtonPin=LOW");
+  delay(5);
+  digitalWrite(powerButtonPin, HIGH);
+  Serial.println("powerButtonPin=HIGH");
+}
+
+void turnOff(void)
+{
+}
+
+void turnOn(void)
+{
 }

@@ -13,3 +13,6 @@ bool handleFileRead(String path);
 void sendStatus();
 void handleNotFound();
 String getContentType(String filename);
+void pressPowerButton(void);
+void turnOff();
+void turnOn();
