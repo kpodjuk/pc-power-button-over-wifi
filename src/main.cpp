@@ -365,7 +365,21 @@ void raportStatusOnSerial()
   if (currentMillis - previousMillis >= interval)
   {
     previousMillis = currentMillis;
-    Serial.printf("######################## Log from:%i ########################\n", millis());
+
+    // \e[0;30m	Black
+    // \e[0;31m	Red
+    // \e[0;32m	Green
+    // \e[0;33m	Yellow
+    // \e[0;34m	Blue
+    // \e[0;35m	Purple
+    // \e[0;36m	Cyan
+    // \e[0;37m	White
+
+    // beggining: \e[1;31m] TEXT HERE
+    // ending always: \e[0m;]
+
+    Serial.printf("\e[0;34m ### Info ### \e[0m \n");
+
     Serial.printf("Signal strength: %i dBm\n", WiFi.RSSI());
 
     Serial.print("SSID: ");
@@ -375,72 +389,75 @@ void raportStatusOnSerial()
     Serial.println(WiFi.localIP());
 
     Serial.print("Status: ");
+
+    char color[20] = "\e[0;31m"; // red by default
     switch (WiFi.status())
     {
     case WL_IDLE_STATUS:
     {
-      Serial.println("WL_IDLE_STATUS");
+      Serial.printf("%s WL_IDLE_STATUS \e[0m\n", color);
       break;
     }
     case WL_NO_SSID_AVAIL:
     {
-      Serial.println("WL_NO_SSID_AVAIL");
+      Serial.printf("%s WL_NO_SSID_AVAIL \e[0m\n", color);
       break;
     }
     case WL_SCAN_COMPLETED:
     {
-      Serial.println("WL_SCAN_COMPLETED");
+      Serial.printf("%s WL_SCAN_COMPLETED \e[0m\n", color);
       break;
     }
     case WL_CONNECTED:
     {
-      Serial.println("WL_CONNECTED");
+      strcpy(color, "\e[0;32m"); // change to green when connected
+      Serial.printf("%s WL_CONNECTED \e[0m\n", color);
       break;
     }
     case WL_CONNECT_FAILED:
     {
-      Serial.println("WL_CONNECT_FAILED");
+      Serial.printf("%s WL_CONNECT_FAILED \e[0m\n", color);
       break;
     }
     case WL_CONNECTION_LOST:
     {
-      Serial.println("WL_CONNECTION_LOST");
+      Serial.printf("%s WL_CONNECTION_LOST \e[0m\n", color);
       break;
     }
-    case WL_WRONG_PASSWORD:
-    {
-      Serial.println("WL_WRONG_PASSWORD");
-      break;
-    }
+    // case WL_WRONG_PASSWORD:
+    // {
+    //   Serial.println("WL_WRONG_PASSWORD");
+    //   break;
+    // }
     case WL_DISCONNECTED:
     {
       Serial.println("WL_DISCONNECTED");
       break;
     }
     }
-
-    // Serial.printf("Connected APs: %i\n", WiFi.softAPgetStationNum());
-
-    // prepare status string
-    // String statusString;
-    // switch (wifiMulti.status())
-    // {
-    // case STATION_GOT_IP:
-    //   statusString = "WL_CONNECTED";
-    // case STATION_NO_AP_FOUND:
-    //   statusString = "WL_NO_SSID_AVAIL";
-    // case STATION_CONNECT_FAIL:
-    //   statusString = "WL_CONNECT_FAILED";
-    // case STATION_WRONG_PASSWORD:
-    //   statusString = "WL_WRONG_PASSWORD";
-    // case STATION_IDLE:
-    //   statusString = "WL_IDLE_STATUS";
-    // default:
-    //   statusString = "WL_DISCONNECTED";
-    // }
-
-    // Serial.print("Status:");
-    // Serial.print(statusString);
-    // Serial.printf("\n");
   }
+
+  // Serial.printf("Connected APs: %i\n", WiFi.softAPgetStationNum());
+
+  // prepare status string
+  // String statusString;
+  // switch (wifiMulti.status())
+  // {
+  // case STATION_GOT_IP:
+  //   statusString = "WL_CONNECTED";
+  // case STATION_NO_AP_FOUND:
+  //   statusString = "WL_NO_SSID_AVAIL";
+  // case STATION_CONNECT_FAIL:
+  //   statusString = "WL_CONNECT_FAILED";
+  // case STATION_WRONG_PASSWORD:
+  //   statusString = "WL_WRONG_PASSWORD";
+  // case STATION_IDLE:
+  //   statusString = "WL_IDLE_STATUS";
+  // default:
+  //   statusString = "WL_DISCONNECTED";
+  // }
+
+  // Serial.print("Status:");
+  // Serial.print(statusString);
+  // Serial.printf("\n");
 }
