@@ -334,10 +334,10 @@ void pressPowerButton()
 bool makeSure(void *arg)
 {
   // time has passed...
-  // desired status  passed through desiredPcStatus
+  // desired status  passed through desiredPcStatus variable
   bool actualPcStatus = !digitalRead(powerLightPin);
-  Serial.printf(Purple "desiredPcStatus=%s\n", desiredPcStatus == true ? "Online" : "Offline");
-  Serial.printf(Blue "actualPcStatus=%s\n" EndColor, actualPcStatus == true ? "Online" : "Offline");
+  Serial.printf(Purple "desiredPcStatus=%s\n", desiredPcStatus == ON ? "Online" : "Offline");
+  Serial.printf("actualPcStatus=%s\n" EndColor, actualPcStatus == true ? "Online" : "Offline");
 
   // if you pressed button and there's no change in PC status, retry button press after x time
   // is desired status achieved? after this time? if not, repeat press
@@ -377,11 +377,11 @@ void turnOff()
 {
   if (digitalRead(powerLightPin) == LOW)
   {
-    Serial.println(Yellow "PC is currently ON, have to press button!");
+    Serial.println(Yellow "PC is currently ON, have to press button!" EndColor);
     pressPowerButton();
     desiredPcStatus = OFF;
-    Serial.print("I will make sure it's really OFF in: ");
-    Serial.printf("%i\nms" EndColor, delayWhenMakingSure);
+    Serial.print(Purple "I will make sure it's really OFF in: ");
+    Serial.printf("%ims\n" EndColor, delayWhenMakingSure);
     timer.in(delayWhenMakingSure, makeSure);
   }
   else
