@@ -5,8 +5,11 @@ var connectionCheckInterval = window.setInterval(function () {
 var connection = new WebSocket('ws://' + location.hostname + ':81/', ['arduino']);
 
 connection.onopen = function () {
-    requestStatusReport(); // request report to fill UI with current data
-    // connection.send('Connect ' + new Date());
+
+    let answerJson = {
+        'connected': true
+    }
+    sendJSON(answerJson)
 };
 connection.onerror = function (error) {
     console.log('WebSocket Error ', error);
@@ -29,12 +32,15 @@ function sendJSON(message) {
 }
 
 function processWebsocketMessage(message) {
-    // example:
-    
-    // m = JSON.parse(message);
-    // if (m["type"] == "STATUS_UPDATE") { // status update received
-    //     processStatusReport(m);
-    // }
+    m = JSON.parse(message);
+    if (m["turnedOn"] == true) { // status update received
+        console.log("Got status: turned on!");
+        document.getElementById("powerStatus").innerHTML = "PC: <b style='color: green'>Turned ON</b>"
+    }  else {
+        console.log("Got status: turned off!");
+        document.getElementById("powerStatus").innerHTML = "PC: <b style='color: red'>Turned OFF</b>"
+
+    }
 
 }
 
@@ -73,20 +79,20 @@ function checkConnection() {
     // 3	CLOSED	The connection is closed or couldn't be opened.
     switch (connection.readyState) {
         case 0:
-            document.getElementById('connectionStatus').innerHTML = "Status: <b style='color: gray'>LACZENIE</b>";
+            document.getElementById('connectionStatus').innerHTML = "Websocket: <b style='color: gray'>Connecting...</b>";
             document.getElementById('settings').style.display = "none";
             break;
         case 1:
-            document.getElementById('connectionStatus').innerHTML = "Status: <b style='color: green'>POLACZONO</b>";
+            document.getElementById('connectionStatus').innerHTML = "Websocket: <b style='color: green'>Connected</b>";
             document.getElementById('settings').style.display = "block";
             // requestStatusReport(); // request report to fill UI with current data
             break;
         case 2:
-            document.getElementById('connectionStatus').innerHTML = "Status: <b style='color: gray'>ZAMYKANIE</b>";
+            document.getElementById('connectionStatus').innerHTML = "Websocket: <b style='color: gray'>Closing...</b>";
             document.getElementById('settings').style.display = "none";
             break;
         case 3:
-            document.getElementById('connectionStatus').innerHTML = "Status: <b style='color: gray'>ROZLACZONO</b>";
+            document.getElementById('connectionStatus').innerHTML = "Websocket: <b style='color: gray'>Disconnected</b>";
             document.getElementById('settings').style.display = "none";
             break;
     }

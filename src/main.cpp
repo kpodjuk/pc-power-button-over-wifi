@@ -27,8 +27,9 @@ void setup()
 
   startSPIFFS(); // Start the SPIFFS and list all contents
 
+#ifndef NO_WEBCLIENT
   startWebSocket(); // Start a WebSocket server
-
+#endif
   startMDNS(); // Start the mDNS responder
 
   startServer(); // Start a HTTP server with a file read handler and an upload handler
@@ -36,10 +37,12 @@ void setup()
 
 void loop()
 {
-  webSocket.loop();      // constantly check for websocket events
+#ifndef NO_WEBCLIENT
+  webSocket.loop(); // constantly check for websocket events
+  refreshStatusIfNeeded();
+#endif
   server.handleClient(); // run the server
   ArduinoOTA.handle();   // listen for OTA events
-  // checkPowerLightPin();
 }
 
 void startWiFi()
@@ -136,32 +139,38 @@ void startServer()
 
   server.on("/api", HTTP_GET, []()
             {
-              if (server.argName(0) == "p")
-              {
-                String desiredAction = server.arg(0);
-                if (desiredAction == "on")
-                {
-                  Serial.println("/api: Turning on!");
-                  turnOn();
-                }
-                else if (desiredAction == "off")
-                {
-                  Serial.println("/api: Turning off!");
-                  turnOff();
-                }
-                else if (desiredAction == "toggle")
-                {
-                  Serial.println("/api: Toggling!");
-                  pressPowerButton();
-                } else {
-                  Serial.println("/api: Wrong value!");
-
-                }
-              } else {
-                  Serial.println("/api: Wrong param!");
-
-              }
-              server.send(200, "text/plain", ""); });
+    if (server.argName(0) == "p")
+    {
+      String desiredAction = server.arg(0);
+      if (desiredAction == "on")
+      {
+        Serial.println("/api: Turning on!");
+        server.send(200, "text/plain", "/api: Turning on!");
+        turnOn();
+      }
+      else if (desiredAction == "off")
+      {
+        Serial.println("/api: Turning off!");
+        server.send(200, "text/plain", "/api: Turning off!");
+        turnOff();
+      }
+      else if (desiredAction == "toggle")
+      {
+        Serial.println("/api: Toggling!");
+        server.send(200, "text/plain", "/api: Toggling!");
+        pressPowerButton();
+      }
+      else
+      {
+        Serial.println("/api: Wrong param value!");
+        server.send(200, "text/plain", "/api: Wrong param value!");
+      }
+    }
+    else
+    {
+      Serial.println("/api: Wrong param!");
+      server.send(200, "text/plain", "/api: Wrong param!");
+    } });
 
   server.onNotFound(handleNotFound); // if someone requests any other file or page, go to function 'handleNotFound'
                                      // and check if the file exists
@@ -171,11 +180,16 @@ void startServer()
 }
 
 void handleNotFound()
-{ // if the requested file or page doesn't exist, return a 404 not found error
+{
+// if the requested file or page doesn't exist, return a 404 not found error
+#ifdef NO_WEBCLIENT
+  server.send(404, "text/plain", "404: WebClient not available in this build, use /api?p=");
+#else
   if (!handleFileRead(server.uri()))
   { // check if the file exists in the flash memory (SPIFFS), if so, send it
     server.send(404, "text/plain", "404: File Not Found");
   }
+#endif
 }
 
 bool handleFileRead(String path)
@@ -213,7 +227,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
   }
   break;
   case WStype_TEXT: // if new text data is received
-    Serial.printf("[%u] get Text: %s\n", num, payload);
+    Serial.printf("[%u] got WS text: %s\n", num, payload);
 
     // String payload_str = String((char*) payload);
 
@@ -234,7 +248,13 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
 
     if (jsonDoc["type"] == "POWER_BUTTON")
     {
+      Serial.println("Json tells me to: pressPowerButton()");
       pressPowerButton();
+    }
+    else if (jsonDoc["connected"] == true)
+    {
+      // Serial.println("Json tells me to: sendStatus()");
+      sendStatus();
     }
 
     break;
@@ -273,30 +293,18 @@ String getContentType(String filename)
   return "text/plain";
 }
 
-bool readPowerLightStatus()
-{
-  Serial.println("readPowerLightStatus()");
-  // read powerlight to determine current PC status (on/off)
-  return true;
-}
-
 void sendStatus()
 {
   // send current status to websocket client here (mode, settings for that mode)
-  jsonDoc["type"] = "STATUS_UPDATE";
-  jsonDoc["turned_on"] = readPowerLightStatus();
 
-  // if (currentOperatingMode == SOLID_COLOR)
-  // { // attach info about choosen setting if needed
-  // jsonDoc["solidColor"] = solidColor;
-  // }
+  jsonDoc["turnedOn"] = !digitalRead(powerLightPin);
 
   String statusString;
   serializeJson(jsonDoc, statusString);
 
-  // JsonArray data = doc.createNestedArray("data");
-  // data.add(48.756080);
-  // data.add(2.302038);
+  Serial.print("Sending status:");
+
+  Serial.print(statusString);
 
   // It's sent to every client connected, not the one who requested it
   // no harm in that tho
@@ -307,9 +315,10 @@ void pressPowerButton()
 {
   // Pin LOW == you pressed power button
   digitalWrite(powerButtonPin, LOW);
-  delay(50); // to small of a delay and it might not work
+  delay(50); // too small of a delay and it might not work
   digitalWrite(powerButtonPin, HIGH);
   Serial.println("powerButtonPressed!");
+  sendStatus();
 }
 
 void turnOff()
@@ -338,15 +347,14 @@ void turnOn()
   }
 }
 
-void checkPowerLightPin()
+void refreshStatusIfNeeded()
 {
+  bool currentPcStatus = digitalRead(powerLightPin);
 
-  unsigned long currentMillis = millis();
-
-  if (currentMillis - previousMillis >= interval)
+  if (currentPcStatus != previousPcStatus)
   {
-    previousMillis = currentMillis;
-
-    Serial.printf("powerLightPin=%i\r\n", digitalRead(powerLightPin));
+    sendStatus();
   }
+
+  previousPcStatus = digitalRead(powerLightPin);
 }
