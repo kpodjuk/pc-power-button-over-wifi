@@ -1,0 +1,38 @@
+# Wiring overview
+
+- Green wire D4 - goes into button input (female)
+- Blue wire D2 - goes into power light (female)
+
+- Black USB 5V GND (female)
+- Black mobo GND (female)
+- Black normal button gnd (male)
+
+- Red - USB 5V (female)
+
+- Yellow - normal button +
+
+# Wiring groups
+## USB power
+- Purple - USB 5V (female)
+- Black USB 5V GND (female)
+
+## Mobo 
+- Blue wire D2 - goes into power light (female)
+- Green wire D4 - goes into button input (female)
+- Black mobo GND (female)
+
+## Button passthrough
+- Black normal button gnd (male)
+- Orange - normal button +++ (male)
+
+
+
+# TODO
+## USB power
+- purple - USB 5V (female)
+
+## Mobo 
+
+## Button passthrough
+- Black normal button gnd (male)
+- Yellow - normal button +++ (male)
