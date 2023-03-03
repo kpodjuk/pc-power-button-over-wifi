@@ -10,7 +10,9 @@
 
 void setup()
 {
+  // powerButtonPin HIGH - button not pressed, LOW - pressed
   pinMode(powerButtonPin, OUTPUT);
+  // powerLightPin LOW - PC ON, HIGH - PC OFF
   pinMode(powerLightPin, INPUT);
 
   digitalWrite(powerButtonPin, HIGH); // HIGH - counts as not pressing the button
@@ -305,14 +307,14 @@ void pressPowerButton()
 {
   // Pin LOW == you pressed power button
   digitalWrite(powerButtonPin, LOW);
-  delay(5);
+  delay(50); // to small of a delay and it might not work
   digitalWrite(powerButtonPin, HIGH);
   Serial.println("powerButtonPressed!");
 }
 
 void turnOff()
 {
-  if (digitalRead(powerLightPin) == HIGH)
+  if (digitalRead(powerLightPin) == LOW)
   {
     Serial.println("PC ON, have to press button!");
     pressPowerButton();
@@ -325,7 +327,7 @@ void turnOff()
 
 void turnOn()
 {
-  if (digitalRead(powerLightPin) == LOW)
+  if (digitalRead(powerLightPin) == HIGH)
   {
     Serial.println("PC Off, have to press button!");
     pressPowerButton();
@@ -338,7 +340,6 @@ void turnOn()
 
 void checkPowerLightPin()
 {
-  Serial.printf("powerLightPin=%i\r\n", digitalRead(powerLightPin));
 
   unsigned long currentMillis = millis();
 
