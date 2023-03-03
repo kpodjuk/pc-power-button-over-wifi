@@ -39,7 +39,8 @@ void loop()
 #ifndef NO_WEBCLIENT
   webSocket.loop(); // constantly check for websocket events
   refreshStatusIfNeeded();
-#else
+#endif
+#ifdef RAPORT_WIFI_STATUS
   raportStatusOnSerial();
 #endif
   server.handleClient(); // run the server
@@ -139,33 +140,37 @@ void startServer()
       String answer;
       if (desiredAction == "on")
       {
-        Serial.println("/api: Turning on!");
-        answer = "/api: Turning on if required! PC status: " + !digitalRead(powerLightPin);
+        Serial.println("\e[0;35m/api: Turning on!\e[0m");
+        answer = "/api: Turning on if required!";
         server.send(200, "text/plain", answer);
         turnOn();
       }
       else if (desiredAction == "off")
       {
-        Serial.println("/api: Turning off!");
+        Serial.println("\e[0;35m/api: Turning off!\e[0m");
         server.send(200, "text/plain", "/api: Turning off!");
         turnOff();
       }
       else if (desiredAction == "toggle")
       {
-        Serial.println("/api: Toggling!");
+        Serial.println("\e[0;35m/api: Toggling!\e[0m");
         server.send(200, "text/plain", "/api: Toggling!");
         pressPowerButton();
       }
       else
       {
-        Serial.println("/api: Wrong param value!");
+        Serial.println("\e[0;31m/api: Wrong param value!\e[0m");
         server.send(200, "text/plain", "/api: Wrong param value!");
       }
-    }
+    } 
     else
     {
-      Serial.println("/api: Wrong param!");
-      server.send(200, "text/plain", "/api: Wrong param!");
+      // if no param = send current PC status
+      Serial.println("\e[0;35m/api: Sending PC status!\e[0m");
+      char answerCharArr[25];
+      sprintf(answerCharArr, "/api: PC status: %s", 
+      digitalRead(powerLightPin) == 0 ? "Online" : "Offline");
+      server.send(200, "text/plain", answerCharArr);
     } });
 
   server.onNotFound(handleNotFound); // if someone requests any other file or page, go to function 'handleNotFound'
@@ -309,11 +314,29 @@ void sendStatus()
 
 void pressPowerButton()
 {
+  const uint16_t delayBetweenPresses = 200;
+  const uint16_t delayBetweenRetries = 5000;
+
   // Pin LOW == you pressed power button
+  // when your PC is still running but your monitor is turned off
+  // pressing power button will wake up monitor
+  // to make sure you always turn off/on, we repeat button press 2 times
+  // first try
   digitalWrite(powerButtonPin, LOW);
-  delay(50); // too small of a delay and it might not work
+  Serial.printf("\e[0;33mpowerButtonPin=%i\e[0m\n", LOW);
+  delay(delayBetweenPresses); // too small of a delay and it might not work
   digitalWrite(powerButtonPin, HIGH);
-  Serial.println("powerButtonPressed!");
+  Serial.printf("\e[0;33mpowerButtonPin=%i\e[0m\n", HIGH);
+
+  delay(delayBetweenRetries);
+
+  // second try
+  digitalWrite(powerButtonPin, LOW);
+  Serial.printf("\e[0;33mpowerButtonPin=%i\e[0m\n", LOW);
+  delay(delayBetweenPresses);
+  digitalWrite(powerButtonPin, HIGH);
+  Serial.printf("\e[0;33mpowerButtonPin=%i\e[0m\n", HIGH);
+
 #ifndef NO_WEBCLIENT
   sendStatus();
 #endif
@@ -375,10 +398,10 @@ void raportStatusOnSerial()
     // \e[0;36m	Cyan
     // \e[0;37m	White
 
-    // beggining: \e[1;31m] TEXT HERE
-    // ending always: \e[0m;]
+    // beggining: \e[1;31m
+    // ending always: \e[0m
 
-    Serial.printf("\e[0;34m ### Info ### \e[0m \n");
+    Serial.printf("\e[0;34m ############### Info ############### \e[0m \n");
 
     Serial.printf("Signal strength: %i dBm\n", WiFi.RSSI());
 
@@ -395,43 +418,38 @@ void raportStatusOnSerial()
     {
     case WL_IDLE_STATUS:
     {
-      Serial.printf("%s WL_IDLE_STATUS \e[0m\n", color);
+      Serial.printf("%sWL_IDLE_STATUS \e[0m\n", color);
       break;
     }
     case WL_NO_SSID_AVAIL:
     {
-      Serial.printf("%s WL_NO_SSID_AVAIL \e[0m\n", color);
+      Serial.printf("%sWL_NO_SSID_AVAIL \e[0m\n", color);
       break;
     }
     case WL_SCAN_COMPLETED:
     {
-      Serial.printf("%s WL_SCAN_COMPLETED \e[0m\n", color);
+      Serial.printf("%sWL_SCAN_COMPLETED \e[0m\n", color);
       break;
     }
     case WL_CONNECTED:
     {
       strcpy(color, "\e[0;32m"); // change to green when connected
-      Serial.printf("%s WL_CONNECTED \e[0m\n", color);
+      Serial.printf("%sWL_CONNECTED \e[0m\n", color);
       break;
     }
     case WL_CONNECT_FAILED:
     {
-      Serial.printf("%s WL_CONNECT_FAILED \e[0m\n", color);
+      Serial.printf("%sWL_CONNECT_FAILED \e[0m\n", color);
       break;
     }
     case WL_CONNECTION_LOST:
     {
-      Serial.printf("%s WL_CONNECTION_LOST \e[0m\n", color);
+      Serial.printf("%sWL_CONNECTION_LOST \e[0m\n", color);
       break;
     }
-    // case WL_WRONG_PASSWORD:
-    // {
-    //   Serial.println("WL_WRONG_PASSWORD");
-    //   break;
-    // }
     case WL_DISCONNECTED:
     {
-      Serial.println("WL_DISCONNECTED");
+      Serial.printf("%sWL_DISCONNECTED \e[0m\n", color);
       break;
     }
     }
