@@ -7,6 +7,7 @@
 #include <WebSocketsServer.h>
 #include "ArduinoJson.h"
 #include "main.h"
+#include <arduino-timer.h>
 
 void setup()
 {
@@ -36,6 +37,8 @@ void setup()
 
 void loop()
 {
+  timer.tick();
+
 #ifndef NO_WEBCLIENT
   webSocket.loop(); // constantly check for websocket events
   refreshStatusIfNeeded();
@@ -315,25 +318,11 @@ void sendStatus()
 void pressPowerButton()
 {
   const uint16_t delayBetweenPresses = 200;
-  const uint16_t delayBetweenRetries = 5000;
 
   // Pin LOW == you pressed power button
-  // when your PC is still running but your monitor is turned off
-  // pressing power button will wake up monitor
-  // to make sure you always turn off/on, we repeat button press 2 times
-  // first try
   digitalWrite(powerButtonPin, LOW);
   Serial.printf("\e[0;33mpowerButtonPin=%i\e[0m\n", LOW);
   delay(delayBetweenPresses); // too small of a delay and it might not work
-  digitalWrite(powerButtonPin, HIGH);
-  Serial.printf("\e[0;33mpowerButtonPin=%i\e[0m\n", HIGH);
-
-  delay(delayBetweenRetries);
-
-  // second try
-  digitalWrite(powerButtonPin, LOW);
-  Serial.printf("\e[0;33mpowerButtonPin=%i\e[0m\n", LOW);
-  delay(delayBetweenPresses);
   digitalWrite(powerButtonPin, HIGH);
   Serial.printf("\e[0;33mpowerButtonPin=%i\e[0m\n", HIGH);
 
@@ -342,16 +331,62 @@ void pressPowerButton()
 #endif
 }
 
+bool makeSure(void *arg)
+{
+  // time has passed...
+  // desired status  passed through desiredPcStatus
+  bool actualPcStatus = !digitalRead(powerLightPin);
+  Serial.printf(Purple "desiredPcStatus=%s\n", desiredPcStatus == true ? "Online" : "Offline");
+  Serial.printf(Blue "actualPcStatus=%s\n" EndColor, actualPcStatus == true ? "Online" : "Offline");
+
+  // if you pressed button and there's no change in PC status, retry button press after x time
+  // is desired status achieved? after this time? if not, repeat press
+  if (desiredPcStatus == ON)
+  {
+    // delay passed, check if PC is really ON, if not repeat button press
+    if (actualPcStatus == true)
+    {
+      // good!
+      Serial.println(Green "makeSure(): Not repeating, everything is allright" EndColor);
+    }
+    else
+    {
+      Serial.println(Red "makeSure(): Pc doesn't seenm to be listening, pressing button again" EndColor);
+      pressPowerButton();
+    }
+  }
+  else if (desiredPcStatus == OFF)
+  {
+    // delay passed, check if PC is really OFF, if not repeat button press
+    if (actualPcStatus == false)
+    {
+      // good!
+      Serial.println(Green "makeSure(): PC Should be off and is off: Not repeating, everything is allright" EndColor);
+    }
+    else
+    {
+      Serial.println(Red "makeSure(): PC Should be off and is on: pressing button again!" EndColor);
+      pressPowerButton();
+    }
+  }
+  desiredPcStatus = CURRENT;
+  return true; // if you want to repeat function after another delay return false
+}
+
 void turnOff()
 {
   if (digitalRead(powerLightPin) == LOW)
   {
-    Serial.println("PC ON, have to press button!");
+    Serial.println(Yellow "PC is currently ON, have to press button!");
     pressPowerButton();
+    desiredPcStatus = OFF;
+    Serial.print("I will make sure it's really OFF in: ");
+    Serial.printf("%i\nms" EndColor, delayWhenMakingSure);
+    timer.in(delayWhenMakingSure, makeSure);
   }
   else
   {
-    Serial.println("PC already OFF");
+    Serial.println(Yellow "PC already OFF, nothing to do" EndColor);
   }
 }
 
@@ -359,12 +394,16 @@ void turnOn()
 {
   if (digitalRead(powerLightPin) == HIGH)
   {
-    Serial.println("PC Off, have to press button!");
+    Serial.println(Yellow "PC is currently OFF, have to press button!" EndColor);
     pressPowerButton();
+    desiredPcStatus = ON;
+    Serial.print("I will make sure it's really ON in: ");
+    Serial.printf("%i\nms" EndColor, delayWhenMakingSure);
+    timer.in(delayWhenMakingSure, makeSure);
   }
   else
   {
-    Serial.println("PC already ON");
+    Serial.println(Yellow "PC already ON, nothing to do" EndColor);
   }
 }
 
@@ -388,18 +427,6 @@ void raportStatusOnSerial()
   if (currentMillis - previousMillis >= interval)
   {
     previousMillis = currentMillis;
-
-    // \e[0;30m	Black
-    // \e[0;31m	Red
-    // \e[0;32m	Green
-    // \e[0;33m	Yellow
-    // \e[0;34m	Blue
-    // \e[0;35m	Purple
-    // \e[0;36m	Cyan
-    // \e[0;37m	White
-
-    // beggining: \e[1;31m
-    // ending always: \e[0m
 
     Serial.printf("\e[0;34m ############### Info ############### \e[0m \n");
 
@@ -454,28 +481,4 @@ void raportStatusOnSerial()
     }
     }
   }
-
-  // Serial.printf("Connected APs: %i\n", WiFi.softAPgetStationNum());
-
-  // prepare status string
-  // String statusString;
-  // switch (wifiMulti.status())
-  // {
-  // case STATION_GOT_IP:
-  //   statusString = "WL_CONNECTED";
-  // case STATION_NO_AP_FOUND:
-  //   statusString = "WL_NO_SSID_AVAIL";
-  // case STATION_CONNECT_FAIL:
-  //   statusString = "WL_CONNECT_FAILED";
-  // case STATION_WRONG_PASSWORD:
-  //   statusString = "WL_WRONG_PASSWORD";
-  // case STATION_IDLE:
-  //   statusString = "WL_IDLE_STATUS";
-  // default:
-  //   statusString = "WL_DISCONNECTED";
-  // }
-
-  // Serial.print("Status:");
-  // Serial.print(statusString);
-  // Serial.printf("\n");
 }

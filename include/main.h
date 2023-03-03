@@ -1,10 +1,37 @@
 #include <string.h>
+#include "arduino-timer.h"
 
 //  Pin definitions
 const int powerButtonPin = D4; // green wire
 const int powerLightPin = D2;  // blue  wire
+const long interval = 30000;   // interval when rapoerting wifi status
+const long delayWhenMakingSure = 10000;
 
 #define JSON_MAXLENGTH 200
+
+auto timer = timer_create_default();
+
+// ### COLORS - Defines that help with colorizing serial output ###
+#define Black "\e[0;30m"
+#define Red "\e[0;31m"
+#define Green "\e[0;32m"
+#define Yellow "\e[0;33m"
+#define Blue "\e[0;34m"
+#define Purple "\e[0;35m"
+#define Cyan "\e[0;36m"
+#define White "\e[0;37m"
+#define EndColor "\e[0"
+// ### COLORS ###
+
+typedef enum
+{
+    CURRENT, // do nothing
+    OFF,     // make sure it's off
+    ON,      // make sure it's on
+} desiredPcStatus_t;
+
+desiredPcStatus_t desiredPcStatus;
+
 ESP8266WiFiMulti wifiMulti;                 // Create an instance of the ESP8266WiFiMulti class, called 'wifiMulti'
 StaticJsonDocument<JSON_MAXLENGTH> jsonDoc; // JSON document received with websocket
 ESP8266WebServer server(80);                // Create a webserver object that listens for HTTP request on port 80
@@ -16,10 +43,11 @@ const char *OTAName = "ESP8266";            // A name and a password for the OTA
 const char *OTAPassword = "esp8266";
 const char *mdnsName = "esp8266"; // Domain name for the mDNS responder
 unsigned long previousMillis;
-const long interval = 30000;
 bool previousPcStatus;
 
 // ************ Function definitions ************
+bool makeSure(void *);
+
 void startWiFi();      // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
 void startOTA();       // Start the OTA service
 void startSPIFFS();    // Start the SPIFFS and list all contents
@@ -38,7 +66,6 @@ void turnOn();
 void checkPowerLightPin();
 void refreshStatusIfNeeded();
 void raportStatusOnSerial();
-
 // WL_NO_SHIELD        = 255,   // for compatibility with WiFi Shield library
 // WL_IDLE_STATUS      = 0,
 // WL_NO_SSID_AVAIL    = 1,
