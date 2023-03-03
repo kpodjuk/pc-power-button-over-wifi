@@ -314,7 +314,9 @@ void pressPowerButton()
   delay(50); // too small of a delay and it might not work
   digitalWrite(powerButtonPin, HIGH);
   Serial.println("powerButtonPressed!");
+#ifndef NO_WEBCLIENT
   sendStatus();
+#endif
 }
 
 void turnOff()
