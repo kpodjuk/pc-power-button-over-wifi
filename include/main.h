@@ -18,7 +18,7 @@ const char *OTAName = "ESP8266";            // A name and a password for the OTA
 const char *OTAPassword = "esp8266";
 const char *mdnsName = "esp8266"; // Domain name for the mDNS responder
 unsigned long previousMillis;
-const long interval = 1000;
+const long interval = 5000;
 bool previousPcStatus;
 
 // ************ Function definitions ************
@@ -39,3 +39,14 @@ void turnOff();
 void turnOn();
 void checkPowerLightPin();
 void refreshStatusIfNeeded();
+void raportStatusOnSerial();
+
+    // WL_NO_SHIELD        = 255,   // for compatibility with WiFi Shield library
+    // WL_IDLE_STATUS      = 0,
+    // WL_NO_SSID_AVAIL    = 1,
+    // WL_SCAN_COMPLETED   = 2,
+    // WL_CONNECTED        = 3,
+    // WL_CONNECT_FAILED   = 4,
+    // WL_CONNECTION_LOST  = 5,
+    // WL_WRONG_PASSWORD   = 6,
+    // WL_DISCONNECTED     = 7

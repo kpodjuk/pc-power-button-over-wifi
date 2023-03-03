@@ -23,8 +23,7 @@ void setup()
 
   startWiFi(); // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
 
-  startOTA(); // Start the OTA service
-
+  startOTA();    // Start the OTA service
   startSPIFFS(); // Start the SPIFFS and list all contents
 
 #ifndef NO_WEBCLIENT
@@ -40,41 +39,36 @@ void loop()
 #ifndef NO_WEBCLIENT
   webSocket.loop(); // constantly check for websocket events
   refreshStatusIfNeeded();
+#else
+  raportStatusOnSerial();
 #endif
   server.handleClient(); // run the server
   ArduinoOTA.handle();   // listen for OTA events
 }
 
 void startWiFi()
-{                              // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
-  WiFi.softAP(ssid, password); // Start the access point
-  Serial.print("Access Point \"");
-  Serial.print(ssid);
-  Serial.println("\" started\r\n");
+{ // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
+  // WiFi.softAP(ssid, password); // Start the access point
+  // Serial.print("Access Point \"");
+  // Serial.print(ssid);
+  // Serial.println("\" started\r\n");
 
   // will it connect to multiple networks or only one?
-  wifiMulti.addAP("Orange_Swiatlowod_Gora", "mlekogrzybowe"); // add Wi-Fi networks you want to connect to
+  WiFi.begin("Orange_Swiatlowod_Gora", "mlekogrzybowe"); // add Wi-Fi networks you want to connect to
   // wifiMulti.addAP("Orange_Swiatlowod_E8A0", "mlekogrzybowe);
 
   Serial.println("Connecting");
-  while (wifiMulti.run() != WL_CONNECTED && WiFi.softAPgetStationNum() < 1)
+  while (WiFi.status() != WL_CONNECTED)
   { // Wait for the Wi-Fi to connect
     delay(250);
     Serial.print('.');
   }
   Serial.println("\r\n");
-  if (WiFi.softAPgetStationNum() == 0)
-  { // If the ESP is connected to an AP
-    Serial.print("Connected to ");
-    Serial.println(WiFi.SSID()); // Tell us what network we're connected to
-    Serial.print("IP address:\t");
-    Serial.print(WiFi.localIP()); // Send the IP address of the ESP8266 to the computer
-  }
-  else
-  { // If a station is connected to the ESP SoftAP
-    Serial.print("Station connected to ESP8266 AP");
-  }
+
   Serial.println("\r\n");
+
+  WiFi.setAutoReconnect(true);
+  WiFi.persistent(true);
 }
 
 void startOTA()
@@ -142,10 +136,12 @@ void startServer()
     if (server.argName(0) == "p")
     {
       String desiredAction = server.arg(0);
+      String answer;
       if (desiredAction == "on")
       {
         Serial.println("/api: Turning on!");
-        server.send(200, "text/plain", "/api: Turning on!");
+        answer = "/api: Turning on if required! PC status: " + !digitalRead(powerLightPin);
+        server.send(200, "text/plain", answer);
         turnOn();
       }
       else if (desiredAction == "off")
@@ -357,4 +353,92 @@ void refreshStatusIfNeeded()
   }
 
   previousPcStatus = digitalRead(powerLightPin);
+}
+
+void raportStatusOnSerial()
+{
+
+  unsigned long currentMillis = millis();
+
+  if (currentMillis - previousMillis >= interval)
+  {
+    previousMillis = currentMillis;
+    Serial.printf("######################## Log from:%i ########################\n", millis());
+    Serial.printf("Signal strength: %i dBm\n", WiFi.RSSI());
+
+    Serial.print("SSID: ");
+    Serial.println(WiFi.SSID());
+
+    Serial.print("localIP: ");
+    Serial.println(WiFi.localIP());
+
+    Serial.print("Status: ");
+    switch (WiFi.status())
+    {
+    case WL_IDLE_STATUS:
+    {
+      Serial.println("WL_IDLE_STATUS");
+      break;
+    }
+    case WL_NO_SSID_AVAIL:
+    {
+      Serial.println("WL_NO_SSID_AVAIL");
+      break;
+    }
+    case WL_SCAN_COMPLETED:
+    {
+      Serial.println("WL_SCAN_COMPLETED");
+      break;
+    }
+    case WL_CONNECTED:
+    {
+      Serial.println("WL_CONNECTED");
+      break;
+    }
+    case WL_CONNECT_FAILED:
+    {
+      Serial.println("WL_CONNECT_FAILED");
+      break;
+    }
+    case WL_CONNECTION_LOST:
+    {
+      Serial.println("WL_CONNECTION_LOST");
+      break;
+    }
+    case WL_WRONG_PASSWORD:
+    {
+      Serial.println("WL_WRONG_PASSWORD");
+      break;
+    }
+    case WL_DISCONNECTED:
+    {
+      Serial.println("WL_DISCONNECTED");
+      break;
+    }
+    }
+
+    // Serial.printf("Connected APs: %i\n", WiFi.softAPgetStationNum());
+
+    // prepare status string
+    // String statusString;
+    // switch (wifiMulti.status())
+    // {
+    // case STATION_GOT_IP:
+    //   statusString = "WL_CONNECTED";
+    // case STATION_NO_AP_FOUND:
+    //   statusString = "WL_NO_SSID_AVAIL";
+    // case STATION_CONNECT_FAIL:
+    //   statusString = "WL_CONNECT_FAILED";
+    // case STATION_WRONG_PASSWORD:
+    //   statusString = "WL_WRONG_PASSWORD";
+    // case STATION_IDLE:
+    //   statusString = "WL_IDLE_STATUS";
+    // default:
+    //   statusString = "WL_DISCONNECTED";
+    // }
+
+    // Serial.print("Status:");
+    // Serial.print(statusString);
+    // Serial.printf("\n");
+  }
 }
