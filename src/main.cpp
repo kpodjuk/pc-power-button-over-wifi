@@ -11,7 +11,7 @@
 void setup()
 {
   pinMode(powerButtonPin, OUTPUT);
-  pinMode(poweredOnDetectionPin, INPUT);
+  pinMode(powerLightPin, INPUT);
 
   digitalWrite(powerButtonPin, HIGH); // HIGH - counts as not pressing the button
 
@@ -37,7 +37,7 @@ void loop()
   webSocket.loop();      // constantly check for websocket events
   server.handleClient(); // run the server
   ArduinoOTA.handle();   // listen for OTA events
-  // checkButtonPin();
+  // checkPowerLightPin();
 }
 
 void startWiFi()
@@ -305,37 +305,47 @@ void pressPowerButton()
 {
   // Pin LOW == you pressed power button
   digitalWrite(powerButtonPin, LOW);
-  Serial.println("powerButtonPin=LOW");
   delay(5);
   digitalWrite(powerButtonPin, HIGH);
-  Serial.println("powerButtonPin=HIGH");
+  Serial.println("powerButtonPressed!");
 }
 
 void turnOff()
 {
-  if (digitalRead(poweredOnDetectionPin) == HIGH)
+  if (digitalRead(powerLightPin) == HIGH)
   {
+    Serial.println("PC ON, have to press button!");
     pressPowerButton();
+  }
+  else
+  {
+    Serial.println("PC already OFF");
   }
 }
 
 void turnOn()
 {
-  if (digitalRead(poweredOnDetectionPin) == LOW)
+  if (digitalRead(powerLightPin) == LOW)
   {
+    Serial.println("PC Off, have to press button!");
     pressPowerButton();
+  }
+  else
+  {
+    Serial.println("PC already ON");
   }
 }
 
-void checkButtonPin()
+void checkPowerLightPin()
 {
+  Serial.printf("powerLightPin=%i\r\n", digitalRead(powerLightPin));
+
   unsigned long currentMillis = millis();
 
   if (currentMillis - previousMillis >= interval)
   {
-    // save the last time you blinked the LED
     previousMillis = currentMillis;
 
-    Serial.printf("poweredOnDetectionPin=%i\r\n", digitalRead(poweredOnDetectionPin));
+    Serial.printf("powerLightPin=%i\r\n", digitalRead(powerLightPin));
   }
 }

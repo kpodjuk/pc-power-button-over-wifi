@@ -1,8 +1,9 @@
 #include <string.h>
 
-// ************ Global vars ************
-const int powerButtonPin = D4;
-const int poweredOnDetectionPin = D2;
+//  Pin definitions
+const int powerButtonPin = D4; // green wire
+const int powerLightPin = D2;  // blue  wire
+
 #define JSON_MAXLENGTH 200
 ESP8266WiFiMulti wifiMulti;                 // Create an instance of the ESP8266WiFiMulti class, called 'wifiMulti'
 StaticJsonDocument<JSON_MAXLENGTH> jsonDoc; // JSON document received with websocket
@@ -33,4 +34,4 @@ String getContentType(String filename);
 void pressPowerButton();
 void turnOff();
 void turnOn();
-void checkButtonPin();
+void checkPowerLightPin();
