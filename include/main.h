@@ -5,7 +5,7 @@
 const int powerButtonPin = D4; // green wire
 const int powerLightPin = D2;  // blue  wire
 const long interval = 30000;   // interval when rapoerting wifi status
-const long delayWhenMakingSure = 10000;
+const long delayWhenMakingSure = 40000;
 
 #define JSON_MAXLENGTH 200
 

@@ -331,6 +331,7 @@ void pressPowerButton()
 #endif
 }
 
+// *arg param is required by timer library
 bool makeSure(void *arg)
 {
   // time has passed...
@@ -369,7 +370,7 @@ bool makeSure(void *arg)
       pressPowerButton();
     }
   }
-  desiredPcStatus = CURRENT;
+  // desiredPcStatus = CURRENT;
   return true; // if you want to repeat function after another delay return false
 }
 
