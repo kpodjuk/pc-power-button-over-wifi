@@ -6,6 +6,7 @@ const int powerButtonPin = D4; // green wire
 const int powerLightPin = D2;  // blue  wire
 const long interval = 30000;   // interval when rapoerting wifi status
 const long delayWhenMakingSure = 40000;
+const uint64_t delayBeforeAP = 5 * 60 * 1000;
 
 #define JSON_MAXLENGTH 200
 
@@ -37,7 +38,7 @@ StaticJsonDocument<JSON_MAXLENGTH> jsonDoc; // JSON document received with webso
 ESP8266WebServer server(80);                // Create a webserver object that listens for HTTP request on port 80
 WebSocketsServer webSocket(81);             // create a websocket server on port 81
 File fsUploadFile;                          // a File variable to temporarily store the received file
-const char *ssid = "PC_Wemos";              // The name of the Wi-Fi network that will be created
+const char *ssid = "PC shutdown";           // The name of the Wi-Fi network that will be created
 const char *password = "";                  // The password required to connect to it, leave blank for an open network
 const char *OTAName = "ESP8266";            // A name and a password for the OTA service
 const char *OTAPassword = "esp8266";
